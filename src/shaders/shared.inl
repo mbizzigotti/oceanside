@@ -49,6 +49,8 @@ struct PNVertex {
 struct PointLight {
 	float3 position;
 	float3 color;
+    float ambient_strength;
+    float specular_strength;
 };
 
 #ifdef __cplusplus

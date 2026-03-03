@@ -55,12 +55,14 @@ enum Result {
     Failed  = 1,
 };
 
-enum class Color : uint32_t {
-	White = 0xFFFFFFFF,
-	Red   = 0xFF0000FF,
-	Green = 0x00FF00FF,
-	Blue  = 0x0000FFFF,
+struct Color {
+    uint8_t r, g, b, a;
 };
+
+static constexpr Color WHITE = { 255, 255, 255, 255 };
+static constexpr Color RED   = { 255,   0,   0, 255 };
+static constexpr Color GREEN = {   0, 255,   0, 255 };
+static constexpr Color BLUE  = {   0,   0, 255, 255 };
 
 // NOTE: TIP! Try NOT to use constructors/destructors.
 //       It complicates things to a degree that just
@@ -108,7 +110,7 @@ struct FixedArenaAllocator {
         return out;
     }
 
-	void clear() {
+	void free_all() {
 		count = 0;
 	}
 };

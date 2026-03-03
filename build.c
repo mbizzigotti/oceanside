@@ -35,9 +35,10 @@ int main(int argc, char* argv[])
 	assert(cmd_run(&cmd, 0));
 
 	// Compile C libraries (need separate compilation unit, unfortunatly)
-	cmd_append(&cmd, "clang", "src/libraries.c", "-c", "-o", "libraries.c.o");
+	cmd_append(&cmd, "clang", "-c", "src/libraries.c");
 	cmd_append(&cmd, "-Wno-deprecated-declarations"); // .. Who asked?
-	cmd_append(&cmd, "-Wno-microsoft-include");
+	cmd_append(&cmd, "-Wno-microsoft-include"); // This is strange
+	cmd_append(&cmd, "-o", "libraries.c.o");
 	assert(cmd_run(&cmd, 0));
 
 	// Compile Application

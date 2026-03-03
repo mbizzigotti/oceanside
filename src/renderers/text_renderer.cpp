@@ -1,12 +1,14 @@
 #include "text_renderer.h"
 #include "../graphics.h"
+
+// NOTE: As far as I know, this is the easiest way of displaying text
+//       on the screen in these types of low level applications.
 #include "../3rdparty/stb_easy_font.h"
 
 void TextRenderer::setup(Graphics &gfx) {
 	vertex_offset = gfx.allocate_buffer(Graphics::VERTEX_BUFFER, MAX_QUAD_COUNT * 4 * sizeof(shader::TextVertex));
 	index_offset = gfx.allocate_buffer(Graphics::INDEX_BUFFER, MAX_QUAD_COUNT * 6 * sizeof(uint32_t));
 	index_start = index_offset / sizeof(u32);
-
 	vertices.resize(MAX_QUAD_COUNT * 4);
 }
 
@@ -17,16 +19,9 @@ void TextRenderer::add_text(Color color, const char *format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-	uint32_t color_value = (uint32_t)(color);
-	u8 color_bytes[4] = {
-		u8(color_value >> 24),
-		u8(color_value >> 16),
-		u8(color_value >>  8),
-		u8(color_value >>  0),
-	};
 	shader::TextVertex* start = vertices.data() + quad_count * 4;
 	int remaining = vertices.size() - quad_count * 4;
-	quad_count += stb_easy_font_print(4, 4 + line_offset, (char*)buffer, color_bytes, start, remaining);
+	quad_count += stb_easy_font_print(4, 4 + line_offset, (char*)buffer, &color.r, start, remaining);
 	line_offset += 12; // Font height is 12 "pixels"
 }
 

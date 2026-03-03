@@ -5,7 +5,10 @@ WORK IN PROGRESS
 # Setup
 
 ```sh
+# MacOS / Linux
 clang build.c -o build
+# Windows
+clang build.c -o build.exe
 ```
 
 > [!NOTE]

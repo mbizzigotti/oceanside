@@ -1,4 +1,5 @@
-#include "common.inl"
+#include "shared.inl"
+#define FONT_SCALE 2.0
 
 struct VSOut {
     float4 position : SV_Position;
@@ -21,17 +22,17 @@ VSOut main(uint vertexIndex : SV_VertexID)
     case Shader.Position_Normal: {
         const uint index = vertexIndex * sizeof(PNVertex) + draw.vertex_offset;
         PNVertex vertex = vertex_buffer.LoadByteOffset<PNVertex>(index);
-        float4 world_position = mul(draw.model, float4(vertex.position, 1.0));
+        float4 world_position = mul(draw.model, float4(vertex.position, 1));
         output.position = mul(scene.view_proj, world_position);
         output.param1 = world_position;
-        output.param2 = float4(vertex.normal, 0.0);
+        output.param2 = float4(vertex.normal, 0);
     } break;
 
     case Shader.Text: {
         const uint index = vertexIndex * sizeof(TextVertex) + draw.vertex_offset;
         TextVertex vertex = vertex_buffer.Load<TextVertex>(index);
-        float2 scale = 4.0 / scene.screen_size;
-        output.position = float4(vertex.position.xy * scale - 1.0, 0, 1);
+        float2 scale = FONT_SCALE / scene.screen_size;
+        output.position = float4(vertex.position.xy * scale - 1, 0, 1);
         output.param1 = unpackUnorm4x8ToFloat(vertex.color);
     } break;
     }
@@ -41,20 +42,18 @@ VSOut main(uint vertexIndex : SV_VertexID)
 float3 eval_point_light(PointLight light, float3 position, float3 normal)
 {
     // Ambient
-    float ambientStrength = 0.1;
-    float3 ambient = ambientStrength * light.color;
+    float3 ambient = light.ambient_strength * light.color;
 
     // Diffuse
     float3 dir_to_light = normalize(light.position - position);
-    float diff = max(dot(normal, dir_to_light), 0.0);
+    float diff = max(dot(normal, dir_to_light), 0);
     float3 diffuse = diff * light.color;
 
     // Specular
-    float specularStrength = 0.5;
     float3 viewDir = normalize(scene.view_pos - position);
     float3 reflectDir = reflect(-dir_to_light, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    float3 specular = specularStrength * spec * light.color;
+    float spec = pow(max(dot(viewDir, reflectDir), 0), 32);
+    float3 specular = light.specular_strength * spec * light.color;
 
     return ambient + diffuse + specular;
 }
@@ -67,17 +66,17 @@ float4 main(VSOut input) : SV_Target
         PointLight light = {
             { 0, 6, 10 },
             { 1, 1, 1 },
+            0.1, 0.5,
         };
-
         float3 normal = normalize(input.param2.xyz);
         float3 position = input.param1.xyz;
         float3 color = eval_point_light(light, position, normal);
-        return float4(color, 1.0);
+        return float4(color, 1);
     }
 
     case Material.Text: {
         return input.param1;
     }
     }
-    return float4(0.0);
+    return float4(0);
 }

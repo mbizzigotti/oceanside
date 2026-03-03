@@ -8,11 +8,6 @@ struct Skybox {
     void render(Graphics &gfx) { (void)gfx; }
 };
 
-struct GPU_Scene {
-    // Camera view-projection matrix
-    mat4 view_proj;
-};
-
 struct Scene {
     Camera camera;
     Skybox skybox;

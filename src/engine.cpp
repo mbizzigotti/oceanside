@@ -61,12 +61,14 @@ Result Engine::run() {
 
 		float dt = timer.tick();
 
+		// TODO(mitch): This is awkward, I should just double buffer
+		//              the text rendering so this isn't needed...
 		vkQueueWaitIdle(graphics.queue);
 
 		if (graphics.prepare_frame())
 			return ERROR("Failed to prepare frame!");
 
-		text.add_text(Color::White, "%.1f FPS", 1.0f / dt);
+		text.add_text(WHITE, "%.1f FPS", 1.0f / dt);
 
 		scene.update_and_render(graphics, dt);
 		text.write_dynamic_buffers(graphics);

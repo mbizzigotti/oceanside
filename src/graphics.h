@@ -1,6 +1,6 @@
 #pragma once
 #include "core.h"
-#include "shaders/common.inl"
+#include "shaders/shared.inl"
 
 #define MAX_FRAMES_IN_FLIGHT  2
 #define MAX_SWAP_CHAIN_IMAGES 4 /* For mobile devices, this would need to be higher.. */
