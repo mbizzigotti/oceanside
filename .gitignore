@@ -5,5 +5,5 @@ build.*
 !build.c
 app
 app.*
-*.dylib
+./*.dylib
 *.spv
