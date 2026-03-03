@@ -1,0 +1,8 @@
+{
+    "objects": [
+        {
+            "type": "Mesh",
+            "file": "assets/teapot.obj"
+        }
+    ]
+}

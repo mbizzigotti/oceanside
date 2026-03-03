@@ -1,0 +1,9 @@
+*.o
+
+build
+build.*
+!build.c
+app
+app.*
+*.dylib
+*.spv

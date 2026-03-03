@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "Config: MacOS",
+            "includePath": [],
+            "defines": [],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "macos-clang-arm64"
+        },
+        {
+            "name": "Config: Windows",
+            "includePath": [],
+            "defines": [],
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "clang-x64"
+        },
+        {
+            "name": "Config: Linux",
+            "includePath": [],
+            "defines": [],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

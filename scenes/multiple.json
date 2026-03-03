@@ -1,0 +1,23 @@
+{
+    "objects": [
+        {
+            "type": "Mesh",
+            "file": "assets/cube.obj"
+        },
+        {
+            "type": "Mesh",
+            "file": "assets/monkey.obj",
+            "transform": [
+                {"translate": [3, 0, 0]}
+            ]
+        },
+        {
+            "type": "Mesh",
+            "file": "assets/teapot.obj",
+            "transform": [
+                {"scale": [0.15, 0.15, 0.15]},
+                {"translate": [-3, 0, 0]}
+            ]
+        }
+    ]
+}
