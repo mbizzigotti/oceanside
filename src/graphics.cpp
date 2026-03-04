@@ -7,7 +7,7 @@
 struct PartitionInfo {
 	int partition;
 	u32 binding;
-	int usage;
+	u32 usage;
 };
 
 PartitionInfo partition_infos[] = {
@@ -15,6 +15,33 @@ PartitionInfo partition_infos[] = {
 	{ .partition =  Graphics::VERTEX_BUFFER,  .binding = 1,          .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT },
 	{ .partition =  Graphics::INDEX_BUFFER,   .binding = UINT32_MAX, .usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT   },
 };
+
+VkBufferUsageFlags partition_buffer_usage(int partition) {
+	for (auto &info: partition_infos) {
+		if (info.partition == partition)
+			return info.usage;
+	}
+	ERROR("Must define buffer usage for graphics memory partition!");
+	exit(1);
+}
+
+uint32_t partition_buffer_binding(int partition) {
+	for (auto &info: partition_infos) {
+		if (info.partition == partition)
+			return info.binding;
+	}
+	ERROR("Must define binding index for buffer partition!");
+	exit(1);
+}
+
+VkDescriptorType descriptor_type_from_buffer_usage(VkFlags usage) {
+	switch (usage) {
+		case VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		case VK_BUFFER_USAGE_STORAGE_BUFFER_BIT: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	}
+	ERROR("No descriptor type for this buffer usage!");
+	exit(1);
+}
 
 Result Graphics::create_instance(bool enable_validation) {
 	VkApplicationInfo application_info = {
@@ -160,23 +187,10 @@ Result Graphics::create_depth_buffer() {
 	VkMemoryRequirements memory_requirements = {};
 	vkGetImageMemoryRequirements(device, depth_image, &memory_requirements);
 
-	VkPhysicalDeviceMemoryProperties properties = {};
-	vkGetPhysicalDeviceMemoryProperties(physical_device, &properties);
-	uint32_t memory_type = 0;
-	uint32_t desired_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	for (uint32_t i = 0; i < properties.memoryTypeCount; ++i)
-	{
-		if (!(memory_requirements.memoryTypeBits & (1 << i)))
-			continue;
-		if ((properties.memoryTypes[i].propertyFlags & desired_flags) != desired_flags)
-			continue;
-		memory_type = i;
-	}
-
 	VkMemoryAllocateInfo allocate_info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.allocationSize = memory_requirements.size,
-		.memoryTypeIndex = memory_type,
+		.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
 	if (vkAllocateMemory(device, &allocate_info, 0, &depth_memory) != VK_SUCCESS)
 		return Failed;
@@ -242,24 +256,21 @@ Result Graphics::create_layouts() {
 	if (vkCreateDescriptorPool(device, &pool_info, 0, &descriptor_pool) != VK_SUCCESS)
 		return Failed;
 
-	// TODO use partitions here
-	VkDescriptorSetLayoutBinding bindings[] = {
-		{
-			.binding = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	uint32_t binding_count = 0;
+	VkDescriptorSetLayoutBinding bindings[__PARTITION_COUNT__];
+	for (int i = 0; i < __PARTITION_COUNT__; ++i) {
+		if (partition_infos[i].binding == UINT32_MAX)
+			continue;
+		bindings[binding_count++] = {
+			.binding = partition_infos[i].binding,
+			.descriptorType = descriptor_type_from_buffer_usage(partition_infos[i].usage),
 			.descriptorCount = 1,
 			.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
-		},
-		{
-			.binding = 1,
-			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
-		},
-	};
+		};
+	}
 	VkDescriptorSetLayoutCreateInfo layout_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-		.bindingCount = (uint32_t)std::size(bindings),
+		.bindingCount = binding_count,
 		.pBindings = bindings,
 	};
 	if (vkCreateDescriptorSetLayout(device, &layout_info, 0, &descriptor_set_layout) != VK_SUCCESS)
@@ -394,6 +405,20 @@ Result Graphics::create_render_pipeline() {
 
 	vkDestroyShaderModule(device, shader, 0);
 	return Success;
+}
+
+uint32_t Graphics::find_memory_type(uint32_t mask, VkFlags required_properties) {
+	VkPhysicalDeviceMemoryProperties properties = {};
+	vkGetPhysicalDeviceMemoryProperties(physical_device, &properties);
+	uint32_t memory_type = VK_MAX_MEMORY_TYPES;
+	for (uint32_t i = 0; i < properties.memoryTypeCount; ++i) {
+		if (!(mask & (1 << i)))
+			continue; // Skip memory type if we don't support it in our mask
+		if ((properties.memoryTypes[i].propertyFlags & required_properties) != required_properties)
+			continue; // Also skip memory type if it doesn't have the properties we want
+		memory_type = i;
+	}
+	return memory_type;
 }
 
 Result Graphics::setup(bool enable_validation) {
@@ -648,32 +673,6 @@ u32 Graphics::allocate_buffer(Partition partition, u64 num_bytes) {
 	return offset;
 }
 
-VkBufferUsageFlags partition_buffer_usage(int partition) {
-	for (auto &info: partition_infos) {
-		if (info.partition == partition)
-			return info.usage;
-	}
-	ERROR("Must define buffer usage for graphics memory partition!");
-	exit(1);
-}
-
-uint32_t partition_buffer_binding(int partition) {
-	for (auto &info: partition_infos) {
-		if (info.partition == partition)
-			return info.binding;
-	}
-	ERROR("Must define binding index for buffer partition!");
-	exit(1);
-}
-
-VkDescriptorType descriptor_type_from_buffer_usage(VkFlags usage) {
-	switch (usage) {
-		default:
-		case VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		case VK_BUFFER_USAGE_STORAGE_BUFFER_BIT: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	}
-}
-
 Result Graphics::allocate_required_memory() {
 	uint32_t total_bytes_allocated = 0;
 	for (int partition = 0; partition < __PARTITION_COUNT__; ++partition) {
@@ -692,23 +691,13 @@ Result Graphics::allocate_required_memory() {
 		VkMemoryRequirements memory_requirements = {};
 		vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
 
-		VkPhysicalDeviceMemoryProperties properties = {};
-		vkGetPhysicalDeviceMemoryProperties(physical_device, &properties);
-		uint32_t memory_type = 0;
-		uint32_t desired_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-		for (uint32_t i = 0; i < properties.memoryTypeCount; ++i)
-		{
-			if (!(memory_requirements.memoryTypeBits & (1 << i)))
-				continue;
-			if ((properties.memoryTypes[i].propertyFlags & desired_flags) != desired_flags)
-				continue;
-			memory_type = i;
-		}
+		//                     (Graphics Memory)                     (Able to be memory-mapped)
+		VkFlags memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
 		VkMemoryAllocateInfo allocate_info = {
 			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 			.allocationSize = memory_requirements.size,
-			.memoryTypeIndex = memory_type,
+			.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, memory_flags),
 		};
 		if (vkAllocateMemory(device, &allocate_info, 0, &memories[partition]) != VK_SUCCESS)
 			return ERROR("Failed to allocate GPU memory!");

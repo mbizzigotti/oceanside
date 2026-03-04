@@ -4,13 +4,9 @@
 struct Tokenizer;
 
 struct MeshObjectLoader : public ObjectLoader {
-    string filename;
-    
-    struct Vertex {
-        vec3 position;
-        vec3 normal;
-    };
+    using Vertex = shader::PNVertex;
 
+    string              filename;
     mat4                model;
     uint32_t            vertex_offset;
     uint32_t            index_offset;

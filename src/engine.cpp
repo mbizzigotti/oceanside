@@ -71,8 +71,7 @@ Result Engine::run() {
 		text.add_text(WHITE, "%.1f FPS", 1.0f / dt);
 
 		scene.update_and_render(graphics, dt);
-		text.write_dynamic_buffers(graphics);
-		text.render(graphics.current_frame.command_buffer, graphics.pipeline_layout);
+		text.render(graphics);
 
 		if (graphics.submit_frame())
 			return ERROR("Failed to submit frame!");

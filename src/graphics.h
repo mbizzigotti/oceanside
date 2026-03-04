@@ -78,4 +78,5 @@ private:
     Result create_frame_buffers();
     Result create_layouts();
     Result create_render_pipeline();
+    uint32_t find_memory_type(uint32_t mask, VkFlags required_properties);
 };

@@ -20,7 +20,7 @@
             "type": "cppdbg",
             "program": "${workspaceFolder}/app",
             "cwd": "${workspaceFolder}",
-            "args": [],
+            "args": ["scenes/cube.json"],
             "MIMode": "lldb"
         }
     ]
