@@ -14628,17 +14628,17 @@ VkResult RGFW_window_createSurface_Vulkan(RGFW_window* win, VkInstance instance,
     id nsView = (id)win->src.view;
     if (!nsView) {
 		RGFW_sendDebugInfo(RGFW_typeError, RGFW_errMetal, "NSView is NULL for macOS window");
-        return -1;
+        return VkResult(-1);
     }
 
 
-    id layer = ((id (*)(id, SEL))objc_msgSend)(nsView, sel_registerName("layer"));
+    // id layer = ((id (*)(id, SEL))objc_msgSend)(nsView, sel_registerName("layer"));
 
 	void* metalLayer = RGFW_getLayer_OSX();
 	if (metalLayer == NULL) {
-		 return -1;
+        return VkResult(-1);
 	}
-	((void (*)(id, SEL, id))objc_msgSend)((id)nsView, sel_registerName("setLayer:"), metalLayer);
+	((void (*)(id, SEL, id))objc_msgSend)((id)nsView, sel_registerName("setLayer:"), (objc_object *)metalLayer);
     ((void (*)(id, SEL, BOOL))objc_msgSend)(nsView, sel_registerName("setWantsLayer:"), YES);
 
 	VkResult result;

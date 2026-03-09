@@ -146,15 +146,24 @@ void Camera::load(cJSON *object) {
 
     // Parse options that are common to all cameras
 
-    cJSON *j_near = cJSON_GetObjectItem(object, "Near");
-    if (cJSON_IsNumber(j_near)) {
-        near = (float)(j_near->valuedouble);
-    }
+    auto parse_float = [](cJSON *object, const char* name, float& out) {
+        cJSON *item = cJSON_GetObjectItem(object, name);
+        if (cJSON_IsNumber(item)) {
+            out = (float)(item->valuedouble);
+        }
+    };
+    auto parse_u32 = [](cJSON *object, const char* name, u32& out) {
+        cJSON *item = cJSON_GetObjectItem(object, name);
+        if (cJSON_IsNumber(item)) {
+            out = (float)(item->valueint);
+        }
+    };
 
-    cJSON *j_far = cJSON_GetObjectItem(object, "Far");
-    if (cJSON_IsNumber(j_far)) {
-        far = (float)(j_far->valuedouble);
-    }
+    parse_float(object, "Near", near);
+    parse_float(object, "Far", far);
+    parse_float(object, "Fov", fov);
+    parse_u32(object, "Width", width);
+    parse_u32(object, "Height", height);
 }
 
 mat4 Camera::get_transform(vec3 *view_position) {

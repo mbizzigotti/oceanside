@@ -1,3 +1,8 @@
+// NOTE: I don't use CMake anymore for any of my personal projects,
+//       nowadays I only use nob.h. While I think CMake is a good
+//       option, and what most companies will actually use, knowing
+//       how a compiler works and being able to work directly with
+//       the compiler is super useful knowledge.
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
 #include "nob.h"
@@ -37,13 +42,13 @@ int main(int argc, char* argv[])
 	// Compile Application
 	cmd_append(&cmd, "clang++", "-std=c++17"); // Use c++17
 	cmd_append(&cmd, "-Wall", "-Wextra"); // Extra warnings
+	cmd_append(&cmd, "-Wno-deprecated-declarations"); // .. Who asked?
 	cmd_append(&cmd, "-g"); // Debug flags
 	//cmd_append(&cmd, "-O3"); // Optimization Flags
 	cmd_append(&cmd, "-L", PLATFORM_DIR); // Add library search path
 #if defined(_WIN32)
 	cmd_append(&cmd, "-Wno-microsoft-include");
 	cmd_append(&cmd, "-Wno-missing-designated-field-initializers");
-	cmd_append(&cmd, "-Wno-deprecated-declarations"); // .. Who asked?
 	cmd_append(&cmd, "-lgdi32");
 #elif defined(__APPLE__)
 	cmd_append(&cmd, "-framework", "Cocoa", "-framework", "IOKit");
@@ -54,6 +59,6 @@ int main(int argc, char* argv[])
 #endif
 	cmd_append(&cmd, "-lvulkan"); // Link with Vulkan
 	cmd_append(&cmd, "src/main.cpp"); // Add source code
-	cmd_append(&cmd, "-o", "app" EXT); // Rename output application
+	cmd_append(&cmd, "-o", "palomar" EXT); // Rename output application
 	assert(cmd_run(&cmd, 0));
 }
