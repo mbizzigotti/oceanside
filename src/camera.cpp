@@ -94,8 +94,24 @@ bool Camera::handle_event(RGFW_event &event) {
 }
 
 void Camera::update(float dt) {
-    if (RGFW_isKeyPressed(RGFW_tab))
-        type = Type(((int)type + 1) % 2);
+    // Here we need to switch between first person and viewer mode
+    if (RGFW_isKeyPressed(RGFW_tab)) {
+        // Viewer is easy, just swap type
+        if (type == Type::Viewer) {
+            type = Type::First_Person;
+        }
+        // First Person is more complicated because we
+        // need to fix the mouse if it was hidden before
+        else if (type == Type::First_Person) {
+            type = Type::Viewer;
+            if (first_person.is_enabled) {
+                first_person.is_enabled = false;
+                RGFW_window *window = RGFW_getRootWindow();
+                RGFW_window_showMouse(window, !first_person.is_enabled);
+                RGFW_window_captureRawMouse(window, first_person.is_enabled);
+            }
+        }
+    }
 
     if (type != Type::First_Person)
         return;

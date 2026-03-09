@@ -41,7 +41,10 @@ Result Engine::setup(Options &options) {
 	window = RGFW_createWindow(options.scene_filename, 0, 0, width, height, flags);
 	if (graphics.attach(window))
 		return ERROR("Failed to attach to window!");
-
+	
+	// Sometimes the window doesn't focus correctly,
+	// hopefully this will fix that..
+	RGFW_window_focus(window);
 	return Success;
 }
 
