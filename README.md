@@ -21,6 +21,12 @@ clang build.c -o build.exe
 > [!NOTE]
 > Building requires **clang** to be installed;
 > on Windows, the easiest way to install **clang** is from [github.com/llvm/releases/latest](https://github.com/llvm/llvm-project/releases/latest) as `LLVM-X.Y.Z-win64.exe`
+>
+> But, if you already have Visual Studio installed, then it is possible to compile directly using MSVC. To do this, open "x64 Native Tools Command Prompt for VS" and do
+> ```sh
+> cl /std:c++20 lib/windows/vulkan.lib src/main.cpp /Fe:palomar.exe
+> ```
+> `build.c` is simplified to only compile with `clang++`, but it can be modified to use MSVC instead!
 
 Now that the build program is compiled, there is no need to recompile it, ever[^2]. To then build Palomar, simply run the build program
 ```sh
