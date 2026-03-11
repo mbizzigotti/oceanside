@@ -23,3 +23,15 @@ void Object::update_and_render(Scene& scene, Graphics& gfx, float dt) {
     default: break;
     }
 }
+
+void Skybox::render(Graphics &gfx) {
+    VkCommandBuffer cmd = gfx.current_frame.command_buffer;
+    VkPipelineLayout layout = gfx.pipeline_layout;
+
+    shader::PerDraw draw = {
+        .shader_id = shader::Shader::Skybox,
+        .material_id = shader::Material::Skybox,
+    };
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_ALL_GRAPHICS, 0, sizeof(draw), &draw);
+    vkCmdDraw(cmd, 36, 1, 0, 0);
+}

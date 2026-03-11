@@ -1,0 +1,15 @@
+# STORMY DAYS
+# high res 1024^2 environment map
+# ships as TGA.
+
+# By Jockum Skoglund aka hipshot
+# hipshot@zfight.com
+# www.zfight.com
+# Stockholm, 2005 08 25
+
+front  "images/stormydays_ft.tga.png"
+back   "images/stormydays_bk.tga.png"
+up     "images/stormydays_up.tga.png"
+down   "images/stormydays_dn.tga.png"
+right  "images/stormydays_rt.tga.png"
+left   "images/stormydays_lf.tga.png"

@@ -12,6 +12,7 @@ struct VSOut {
 [[vk::binding(1)]] ByteAddressBuffer vertex_buffer;
 // [[vk::binding(2)]] StructuredBuffer<PointLight> lights;
 // [[vk::binding(3)]] StructuredBuffer<float4x4> joint_transforms;
+[[vk::binding(2)]] SamplerCube skybox;
 
 [shader("vertex")]
 VSOut main(uint vertexIndex : SV_VertexID)
@@ -35,6 +36,42 @@ VSOut main(uint vertexIndex : SV_VertexID)
         output.position = float4(vertex.position.xy * scale - 1, 0, 1);
         output.param1 = unpackUnorm4x8ToFloat(vertex.color);
     } break;
+
+    case Shader.Skybox: {
+        /*
+            0 -- 1
+            |\   |\
+            | 4 -- 5
+            | |  | |
+            2-|- 3 |
+             \|   \|
+              6 -- 7
+            
+            z y
+            \|
+             *- x
+        */
+
+        float3 cube_vertices[] = {
+            {-1, 1, 1}, { 1, 1, 1}, {-1,-1, 1}, { 1,-1, 1},
+            {-1, 1,-1}, { 1, 1,-1}, {-1,-1,-1}, { 1,-1,-1}
+        };
+
+        uint cube_indices[] = {
+            0, 1, 3, 0, 3, 2, // Z+
+            1, 0, 4, 1, 4, 5, // Y+
+            0, 2, 6, 0, 6, 4, // X-
+            1, 5, 7, 1, 7, 3, // X+
+            2, 3, 7, 2, 7, 6, // Y-
+            4, 6, 7, 4, 7, 5, // Z-
+        };
+
+        uint index = cube_indices[vertexIndex];
+        float3 P = cube_vertices[index];
+        output.param1 = float4(P, 1);
+        float4 L = mul(scene.view_proj, float4(512.0 * P, 1.0));
+        output.position = float4(L.xy, L.w - 0.001, L.w);
+    }
     }
     return output;
 }
@@ -64,18 +101,28 @@ float4 main(VSOut input) : SV_Target
     switch (draw.material_id) {
     case Material.Phong: {
         PointLight light = {
-            { 0, 6, 10 },
-            { 1, 1, 1 },
-            0.1, 0.5,
+            { 0, 6, 10 }, { 1, 1, 1 }, 0.1, 0.5,
         };
         float3 normal = normalize(input.param2.xyz);
         float3 position = input.param1.xyz;
-        float3 color = eval_point_light(light, position, normal);
+        float3 color = 0;//eval_point_light(light, position, normal);
+
+        float3 viewDir = normalize(scene.view_pos - position);
+        float3 reflectDir = reflect(-viewDir, normal);
+        float spec = pow(max(dot(viewDir, -reflectDir), 0), 1);
+        float3 Le = skybox.Sample(reflectDir).rgb;
+        float3 specular = lerp(float3(0.1), Le, 1 - spec);
+        color += specular;
+
         return float4(color, 1);
     }
 
     case Material.Text: {
         return input.param1;
+    }
+
+    case Material.Skybox: {
+        return skybox.Sample(input.param1.xyz);
     }
     }
     return float4(0);

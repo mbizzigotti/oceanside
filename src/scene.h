@@ -1,12 +1,8 @@
 #pragma once
 #include "camera.h"
 #include "object.h"
-
-struct Graphics;
-
-struct Skybox {
-    void render(Graphics &gfx) { (void)gfx; }
-};
+#include "graphics.h"
+#include "3rdparty/stb_image.h"
 
 struct Scene {
     Camera camera;

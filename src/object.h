@@ -23,3 +23,8 @@ struct Object {
 
     void update_and_render(Scene& scene, Graphics& gfx, float dt);
 };
+
+struct Skybox {
+    void setup(Graphics &gfx);
+    void render(Graphics &gfx);
+};

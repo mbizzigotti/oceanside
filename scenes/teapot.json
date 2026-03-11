@@ -1,4 +1,7 @@
 {
+    "skybox": {
+        "file": "assets/stormydays.cubemap"
+    },
     "objects": [
         {
             "type": "Mesh",

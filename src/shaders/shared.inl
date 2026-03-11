@@ -14,11 +14,13 @@ using float4x4 =  mat4;
 enum class Shader {
     Position_Normal,
     Text,
+    Skybox,
 };
 
 enum class Material {
     Phong,
     Text,
+    Skybox,
 };
 
 struct PerDraw {

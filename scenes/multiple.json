@@ -3,6 +3,9 @@
         "width": 800,
         "height": 600
     },
+    "skybox": {
+        "file": "assets/stormydays.cubemap"
+    },
     "objects": [
         {
             "type": "Mesh",

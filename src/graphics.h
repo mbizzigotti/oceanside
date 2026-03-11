@@ -12,6 +12,18 @@ struct Graphics {
         VkFramebuffer   frame_buffer;
     };
 
+    struct Image {
+        VkDeviceMemory memory;
+        VkImage        image;
+        VkImageView    view;
+        VkExtent2D     extent;
+        VkFormat       format;
+    };
+
+    enum ImageFlags {
+        IMAGE_FLAG_CREATE_CUBE_MAP = (1 << 0),
+    };
+
     enum Partition {
         SCENE_DATA,
         VERTEX_BUFFER,
@@ -37,9 +49,7 @@ struct Graphics {
 	VkFence               fences[MAX_FRAMES_IN_FLIGHT];
 	VkRenderPass          render_pass;
 	VkFramebuffer         frame_buffers[MAX_SWAP_CHAIN_IMAGES];
-	VkImage               depth_image;
-	VkDeviceMemory        depth_memory;
-	VkImageView           depth_view;
+	Image                 depth;
     VkDescriptorPool      descriptor_pool;
     VkDescriptorSetLayout descriptor_set_layout;
     VkDescriptorSet       descriptor_set;
@@ -57,7 +67,9 @@ struct Graphics {
     Result allocate_required_memory();
     
     uint32_t allocate_buffer(Partition type, u64 num_bytes);
+    Image create_image(const char* name, VkImageUsageFlags usage, VkFormat format, u32 width, u32 height, u32 flags = 0);
 
+    Result write_image(const Image &image, const void* data, VkImageLayout layout, int layer = 0);
     void write_vertex_buffer(u32 offset, void *data, u64 num_bytes);
     void write_index_buffer(u32 offset, void *data, u64 num_bytes);
 
@@ -74,7 +86,6 @@ private:
     Result pick_physical_device();
     Result create_device(bool enable_validation);
     Result create_command_buffers();
-    Result create_depth_buffer();
     Result create_frame_buffers();
     Result create_layouts();
     Result create_render_pipeline();

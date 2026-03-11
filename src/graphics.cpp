@@ -161,67 +161,9 @@ Result Graphics::create_command_buffers() {
 	return Success;
 }
 
-Result Graphics::create_depth_buffer() {
-	VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
-	
-	VkImageCreateInfo image_info = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.flags = 0,
-		.imageType = VK_IMAGE_TYPE_2D,
-		.format = depth_format,
-		.extent = {
-			.width = image_extent.width,
-			.height = image_extent.height,
-			.depth = 1
-		},
-		.mipLevels = 1,
-		.arrayLayers = 1,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-	};
-	if (vkCreateImage(device, &image_info, 0, &depth_image) != VK_SUCCESS)
-		return Failed;
-
-	VkMemoryRequirements memory_requirements = {};
-	vkGetImageMemoryRequirements(device, depth_image, &memory_requirements);
-
-	VkMemoryAllocateInfo allocate_info = {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.allocationSize = memory_requirements.size,
-		.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
-	};
-	if (vkAllocateMemory(device, &allocate_info, 0, &depth_memory) != VK_SUCCESS)
-		return Failed;
-
-	if (vkBindImageMemory(device, depth_image, depth_memory, 0) != VK_SUCCESS)
-		return Failed;
-
-	VkImageViewCreateInfo view_info = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.flags = 0,
-		.image = depth_image,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D,
-		.format = depth_format,
-		.components = {}, // Identity
-		.subresourceRange = {
-			.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-			.baseMipLevel = 0,
-			.levelCount = 1,
-			.baseArrayLayer = 0,
-			.layerCount = 1,
-		},
-	};
-	if (vkCreateImageView(device, &view_info, 0, &depth_view) != VK_SUCCESS)
-		return Failed;
-
-	return Success;
-}
-
 Result Graphics::create_frame_buffers() {
 	VkImageView attachments[] = {
-		0, depth_view,
+		0, depth.view,
 	};
 	VkFramebufferCreateInfo frame_buffer_info = {
 		.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -249,7 +191,7 @@ Result Graphics::create_layouts() {
 	};
 	VkDescriptorPoolCreateInfo pool_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.maxSets = 1,
+		.maxSets = 16,
 		.poolSizeCount = (uint32_t)std::size(pool_sizes),
 		.pPoolSizes = pool_sizes,
 	};
@@ -268,6 +210,12 @@ Result Graphics::create_layouts() {
 			.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
 		};
 	}
+	bindings[binding_count++] = {
+		.binding = 2,
+		.descriptorCount = 1,
+		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+	};
 	VkDescriptorSetLayoutCreateInfo layout_info = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.bindingCount = binding_count,
@@ -552,7 +500,11 @@ Result Graphics::attach(RGFW_window *window) {
 	if (vkCreateRenderPass(device, &render_pass_info, 0, &render_pass) != VK_SUCCESS)
 		return ERROR("Failed to create render pass!");
 
-	if (create_depth_buffer()) return Failed;
+	VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	depth = create_image("Depth Buffer", usage, VK_FORMAT_D32_SFLOAT, image_extent.width, image_extent.height);
+	if (depth.view == VK_NULL_HANDLE)
+		return ERROR("Failed to create depth image!");
+
 	if (create_frame_buffers()) return Failed;
 	if (create_render_pipeline()) return Failed;
 	return Success;
@@ -673,6 +625,66 @@ uint32_t Graphics::allocate_buffer(Partition partition, u64 num_bytes) {
 	return offset;
 }
 
+Graphics::Image Graphics::create_image(const char* name, VkImageUsageFlags usage, VkFormat format, u32 width, u32 height, u32 flags) {	
+	Image result{};
+	VkImageCreateInfo image_info = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.flags = u32(flags & IMAGE_FLAG_CREATE_CUBE_MAP ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0),
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = format,
+		.extent = {
+			.width = width,
+			.height = height,
+			.depth = 1
+		},
+		.mipLevels = 1,
+		.arrayLayers = u32(flags & IMAGE_FLAG_CREATE_CUBE_MAP ? 6 : 1),
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.tiling = VK_IMAGE_TILING_OPTIMAL,
+		.usage = usage,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+	};
+	if (vkCreateImage(device, &image_info, 0, &result.image) != VK_SUCCESS)
+		return ERROR("Failed to create image!"), Image {};
+
+	VkMemoryRequirements memory_requirements = {};
+	vkGetImageMemoryRequirements(device, result.image, &memory_requirements);
+
+	VkMemoryAllocateInfo allocate_info = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = memory_requirements.size,
+		.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
+	};
+	printf("Info: Allocated %.3f MB for %s\n", (double)(memory_requirements.size) / (1024.0 * 1024.0), name);
+	if (vkAllocateMemory(device, &allocate_info, 0, &result.memory) != VK_SUCCESS)
+		return ERROR("Failed to allocate image memory!"), Image {};
+
+	if (vkBindImageMemory(device, result.image, result.memory, 0) != VK_SUCCESS)
+		return ERROR("Failed to bind image memory!"), Image {};
+
+	VkImageViewCreateInfo view_info = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.flags = 0,
+		.image = result.image,
+		.viewType = (flags & IMAGE_FLAG_CREATE_CUBE_MAP ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D),
+		.format = format,
+		.components = {}, // Identity
+		.subresourceRange = {
+			.aspectMask = (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+			            ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT,
+			.baseMipLevel = 0,
+			.levelCount = 1,
+			.baseArrayLayer = 0,
+			.layerCount = image_info.arrayLayers,
+		},
+	};
+	if (vkCreateImageView(device, &view_info, 0, &result.view) != VK_SUCCESS)
+		return ERROR("Failed to create image view!"), Image {};
+	result.extent = { width, height };
+	result.format = format;
+	return result;
+}
+
 Result Graphics::allocate_required_memory() {
 	uint32_t total_bytes_allocated = 0;
 	for (int partition = 0; partition < __PARTITION_COUNT__; ++partition) {
@@ -733,8 +745,107 @@ Result Graphics::allocate_required_memory() {
 	return Success;
 }
 
-void Graphics::write_vertex_buffer(u32 offset, void *data, u64 num_bytes) {
-	assert(memory_available && "GPU memory is not available yet!");
+Result Graphics::write_image(const Image &image, const void *data, VkImageLayout layout, int layer) {
+	VkDeviceSize   data_size = image.extent.width * image.extent.height * 4;
+	VkBuffer       stagingBuffer;
+	VkDeviceMemory stagingMemory;
+
+	// 1. Create Staging Buffer
+	VkBufferCreateInfo bufferInfo = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = data_size,
+		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	};
+	vkCreateBuffer(device, &bufferInfo, 0, &stagingBuffer);
+	VkMemoryRequirements memory_requirements = {};
+	vkGetBufferMemoryRequirements(device, stagingBuffer, &memory_requirements);
+	VkFlags memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	VkMemoryAllocateInfo allocate_info = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = memory_requirements.size,
+		.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, memory_flags),
+	};
+	if (vkAllocateMemory(device, &allocate_info, 0, &stagingMemory) != VK_SUCCESS)
+		return ERROR("Failed to allocate GPU memory!");
+	if (vkBindBufferMemory(device, stagingBuffer, stagingMemory, 0) != VK_SUCCESS)
+		return Failed;
+
+	// 2. Copy Image Data to Staging Buffer
+	{
+		void* dst;
+		if (vkMapMemory(device, stagingMemory, 0, VK_WHOLE_SIZE, 0, &dst) != VK_SUCCESS)
+			return Failed;
+		memcpy(dst, data, data_size);
+		vkUnmapMemory(device, stagingMemory);
+	}
+
+	// 3. Allocate and Begin writing to a Command Buffer for Transfer operations
+	VkCommandBuffer cmd;
+	VkCommandBufferAllocateInfo commandBufferInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+	commandBufferInfo.commandBufferCount = 1;
+	commandBufferInfo.commandPool = command_pool;
+	commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	vkAllocateCommandBuffers(device, &commandBufferInfo, &cmd);
+	{
+		VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		vkBeginCommandBuffer(cmd, &beginInfo);
+
+		// 4. Set Image Layout for transfer
+		VkImageSubresourceRange range;
+		range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		range.baseMipLevel = 0;
+		range.levelCount = 1;
+		range.baseArrayLayer = layer;
+		range.layerCount = 1;
+		VkImageMemoryBarrier imageBarrier_toTransfer = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+		imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imageBarrier_toTransfer.image = image.image;
+		imageBarrier_toTransfer.subresourceRange = range;
+		imageBarrier_toTransfer.srcAccessMask = 0;
+		imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
+
+		// 5. Copy from Staging Buffer to Destination Image
+		VkBufferImageCopy copyRegion{};
+		copyRegion.bufferOffset = 0;
+		copyRegion.bufferRowLength = 0;
+		copyRegion.bufferImageHeight = 0;
+		copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		copyRegion.imageSubresource.mipLevel = 0;
+		copyRegion.imageSubresource.baseArrayLayer = layer;
+		copyRegion.imageSubresource.layerCount = 1;
+		copyRegion.imageExtent = { image.extent.width, image.extent.height, 1 };
+		vkCmdCopyBufferToImage(cmd, stagingBuffer, image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+
+		// 6. Set Image Layout to the Output Layout
+		VkImageMemoryBarrier imageBarrier_toReadable{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+		imageBarrier_toReadable.image = image.image;
+		imageBarrier_toReadable.subresourceRange = range;
+		imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imageBarrier_toReadable.newLayout = layout;
+		imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
+		vkEndCommandBuffer(cmd);
+
+		// 7. Sumbit commands to GPU and wait for them to complete
+		VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &cmd;
+		vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(queue);
+		vkFreeMemory(device, stagingMemory, 0);
+		vkDestroyBuffer(device, stagingBuffer, 0);
+	}
+	vkFreeCommandBuffers(device, command_pool, 1, &cmd);
+	return Success;
+}
+
+void Graphics::write_vertex_buffer(u32 offset, void *data, u64 num_bytes)
+{
+    assert(memory_available && "GPU memory is not available yet!");
 	memcpy((u8*)(mapped_memory[VERTEX_BUFFER]) + offset, data, num_bytes);
 }
 

@@ -27,9 +27,12 @@ int main(int argc, char *argv[]) {
 #include "core.cpp"
 
 #include "loaders/object_loader.cpp"
+#include "loaders/skybox_loader.cpp"
 #include "loaders/tokenizer.cpp"
 
 #include "renderers/text_renderer.cpp"
 
+#define STB_IMAGE_IMPLEMENTATION
 #define print cJSON__print
 #include "3rdparty/cJSON.c"
+#include "3rdparty/stb_image.h"

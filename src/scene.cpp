@@ -2,6 +2,7 @@
 #include "graphics.h"
 #include "3rdparty/cJSON.h"
 #include "loaders/object_loader.h"
+#include "loaders/skybox_loader.h"
 
 Result Scene::load(string filename, Graphics &gfx) {
     optional<string> scene_text = read_entire_file(filename);
@@ -20,6 +21,10 @@ Result Scene::load(string filename, Graphics &gfx) {
     // Temperarily set the current path to the scene's directory when loading
     auto old_path = std::filesystem::current_path();
     std::filesystem::current_path(path(filename).parent_path());
+
+    // Load Skybox from scene file
+    if (load_skybox(cJSON_GetObjectItem(j_scene, "Skybox"), gfx, &skybox))
+        printf("Warning: Failed to load skybox!");
 
     Result result = Success;
     std::vector<std::unique_ptr<ObjectLoader>> loaders;
