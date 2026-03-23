@@ -32,12 +32,12 @@ Result Engine::setup(Options &options) {
 	if (graphics.setup(options.enable_graphics_validation))
 		return ERROR("Failed to setup graphics context!");
 
-	text.setup(graphics);
+	g_text.setup(graphics);
 
 	if (scene.load(options.scene_filename, graphics))
 		return ERROR("Failed to load scene!");
 
-	text.write_buffers(graphics);
+	g_text.write_buffers(graphics);
 
 	if (scene.camera.width == 0 || scene.camera.height == 0) {
 		printf("Warning: Camera width & height should not be zero, reseting..\n");
@@ -74,10 +74,10 @@ Result Engine::run() {
 		if (graphics.prepare_frame())
 			return ERROR("Failed to prepare frame!");
 
-		text.add_text(WHITE, "%.1f FPS", 1.0f / dt);
+		g_text.add_text(WHITE, "%.1f FPS", 1.0f / dt);
 
 		scene.update_and_render(graphics, dt);
-		text.render(graphics);
+		g_text.render(graphics);
 
 		if (graphics.submit_frame())
 			return ERROR("Failed to submit frame!");

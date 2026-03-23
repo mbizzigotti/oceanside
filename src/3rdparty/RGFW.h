@@ -3812,7 +3812,7 @@ void RGFW_monitorCallback(RGFW_window* win, const RGFW_monitor* monitor, RGFW_bo
 	}
 
 	RGFW_event event;
-	event.type = (connected) ? (RGFW_monitorConnected) : (RGFW_monitorDisconnected);
+	event.type = (RGFW_eventType)((connected) ? (RGFW_monitorConnected) : (RGFW_monitorDisconnected));
 	event.monitor.monitor = monitor;
 	event.common.win = win;
 	RGFW_eventQueuePush(&event);
@@ -5614,7 +5614,7 @@ RGFW_bool RGFW_getPresentationSupport_Vulkan(VkPhysicalDevice physicalDevice, u3
     RGFW_bool wlout = vkGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, _RGFW->wl_display);
     return wlout;
 #elif defined(RGFW_WINDOWS)
-	RGFW_bool out = vkGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
+	RGFW_bool out = (RGFW_bool)(vkGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex));
 	return out;
 #elif defined(RGFW_MACOS) && !defined(RGFW_MACOS_X11)
 	RGFW_UNUSED(physicalDevice);
@@ -10936,7 +10936,7 @@ RGFW_bool RGFW_createSurfacePtr(u8* data, i32 w, i32 h, RGFW_format format, RGFW
 		(void**) &surface->native.bitmapBits,
 		NULL, (DWORD) 0);
 
-	surface->native.format = (format >= RGFW_formatRGBA8) ? RGFW_formatBGRA8 : RGFW_formatBGR8;
+	surface->native.format = (RGFW_format)((format >= RGFW_formatRGBA8) ? RGFW_formatBGRA8 : RGFW_formatBGR8);
 
 	if (surface->native.bitmap == NULL) {
 		RGFW_sendDebugInfo(RGFW_typeError, RGFW_errBuffer,  "Failed to create DIB section.");
@@ -11476,8 +11476,6 @@ RGFW_key RGFW_physicalToMappedKey(RGFW_key key) {
         case VK_PAUSE:    return RGFW_pause;
         default: return RGFW_keyNULL;
     }
-
-    return RGFW_keyNULL;
 }
 
 void RGFW_pollEvents(void) {

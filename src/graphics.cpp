@@ -433,8 +433,8 @@ Result Graphics::setup(bool enable_validation) {
 	return Success;
 }
 
-Result Graphics::attach(RGFW_window *window) {
-	this->window = window; // We use this now!
+Result Graphics::attach(RGFW_window *_window) {
+	window = _window; // We use this now!
 
 	if (RGFW_window_createSurface_Vulkan(window, instance, &surface) != VK_SUCCESS)
 		return ERROR("Failed to create Vulkan surface!");
@@ -672,7 +672,7 @@ uint32_t Graphics::allocate_buffer(Partition partition, u64 num_bytes) {
 		exit(1);
 	}
 	uint32_t offset = partition_sizes[partition];
-	partition_sizes[partition] += num_bytes;
+	partition_sizes[partition] += (u32)(num_bytes);
 	return offset;
 }
 
