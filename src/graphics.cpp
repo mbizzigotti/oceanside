@@ -80,10 +80,9 @@ Result Graphics::create_instance(bool enable_validation) {
 }
 
 Result Graphics::pick_physical_device() {
-	uint32_t count = 1;
-	if (vkEnumeratePhysicalDevices(instance, &count, &physical_device) != VK_SUCCESS)
+	uint32_t count = 1; // Just pick the first device
+	if (vkEnumeratePhysicalDevices(instance, &count, &physical_device) < 0)
 		return ERROR("Failed to enumerate physical devices!");
-
 	return Success;
 }
 
