@@ -20,6 +20,7 @@ if(APPLE)
 endif()
 
 add_executable(palomar ${SOURCE_FILES})
+add_dependencies(palomar compile_shaders)
 
 # Enable extra warnings
 if(MSVC)
