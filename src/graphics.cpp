@@ -1,5 +1,9 @@
 #include "graphics.h"
 
+namespace shader {
+#include "shaders/main.slang.h"
+}
+
 // References:
 //   - https://vulkan-tutorial.com/
 //   - https://docs.vulkan.org/
@@ -311,15 +315,11 @@ Result Graphics::create_layouts() {
 }
 
 Result Graphics::create_render_pipeline() {
-	std::optional<string> shader_contents = read_entire_file("shader.spv");
-	if (!shader_contents)
-		return ERROR("Failed to load shader file \"%s\"", "shader.spv");
-
 	VkShaderModule shader = 0;
 	VkShaderModuleCreateInfo shader_info = {
 		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-		.codeSize = shader_contents->size(),
-		.pCode = (uint32_t*)shader_contents->data(),
+		.codeSize = shader::data_sizeInBytes,
+		.pCode = (uint32_t*)(shader::data),
 	};
 	if (vkCreateShaderModule(device, &shader_info, 0, &shader) != VK_SUCCESS)
 		return Failed;

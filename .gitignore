@@ -1,6 +1,6 @@
 *.o
-
 build/
 *.dylib
 !lib/
 *.spv
+*.bin
