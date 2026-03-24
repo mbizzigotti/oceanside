@@ -5,7 +5,8 @@ int main(int argc, char *argv[]) {
 	Options options(argc, argv);
 
 	if (!options.scene_filename) {
-		printf("No scene provided\n");
+		printf("Error: No scene provided\n");
+		Options::print_help_message();
 		return 0;
 	}
 

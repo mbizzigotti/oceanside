@@ -375,6 +375,12 @@ int main() {
 	extern "C" {
 #endif
 
+#if defined(__cplusplus)
+	#define STRUCT(type) type
+#else
+	#define STRUCT(type) (type)
+#endif
+
 /* makes sure the header file part is only defined once by default */
 #ifndef RGFW_HEADER
 
@@ -13319,7 +13325,7 @@ void RGFW_window_blitSurface(RGFW_window* win, RGFW_surface* surface) {
 	surface->native.rep = (void*)NSBitmapImageRep_initWithBitmapData(&surface->native.buffer, minW, minH, 8, 4, true, false, "NSDeviceRGBColorSpace", 1 << 1, (u32)surface->w * 4, 32);
 
 	id image = ((id (*)(Class, SEL))objc_msgSend)(objc_getClass("NSImage"), sel_getUid("alloc"));
-	NSSize size = (NSSize){(double)minW, (double)minH};
+	NSSize size = STRUCT(NSSize){(double)minW, (double)minH};
 	image = ((id (*)(id, SEL, NSSize))objc_msgSend)((id)image, sel_getUid("initWithSize:"), size);
 
 	RGFW_copyImageData(NSBitmapImageRep_bitmapData((id)surface->native.rep), surface->w, minH, RGFW_formatRGBA8, surface->data, surface->native.format, surface->convertFunc);
@@ -13676,7 +13682,7 @@ void RGFW_stopCheckEvents(void) {
 
 	id e = (id) ((id(*)(Class, SEL, NSEventType, NSPoint, NSEventModifierFlags, void*, NSInteger, void**, short, NSInteger, NSInteger))objc_msgSend)
 		(objc_getClass("NSEvent"), sel_registerName("otherEventWithType:location:modifierFlags:timestamp:windowNumber:context:subtype:data1:data2:"),
-			NSEventTypeApplicationDefined, (NSPoint){0, 0}, (NSEventModifierFlags)0, NULL, (NSInteger)0, NULL, 0, 0, 0);
+			NSEventTypeApplicationDefined, STRUCT(NSPoint){0, 0}, (NSEventModifierFlags)0, NULL, (NSInteger)0, NULL, 0, 0, 0);
 
 	((void (*)(id, SEL, id, bool))objc_msgSend)
 		((id)_RGFW->NSApp, sel_registerName("postEvent:atStart:"), e, 1);
@@ -13765,7 +13771,7 @@ void RGFW_window_move(RGFW_window* win, i32 x, i32 y) {
 	win->x = x;
 	win->y = (i32)RGFW_cocoaYTransform((float)y + (float)content.size.height - 1.0f);
 
-	((void(*)(id,SEL,NSPoint))objc_msgSend)((id)win->src.window, sel_registerName("setFrameOrigin:"), (NSPoint){(double)x, (double)y});
+	((void(*)(id,SEL,NSPoint))objc_msgSend)((id)win->src.window, sel_registerName("setFrameOrigin:"), STRUCT(NSPoint){(double)x, (double)y});
 }
 
 void RGFW_window_resize(RGFW_window* win, i32 w, i32 h) {
@@ -13779,9 +13785,9 @@ void RGFW_window_resize(RGFW_window* win, i32 w, i32 h) {
 	win->h = h;
 
 
-	((void(*)(id, SEL, CGRect))objc_msgSend)((id)win->src.view, sel_registerName("setFrame:"),  (NSRect){{0, 0}, {(double)win->w, (double)win->h}});
+	((void(*)(id, SEL, CGRect))objc_msgSend)((id)win->src.view, sel_registerName("setFrame:"),  STRUCT(NSRect){{0, 0}, {(double)win->w, (double)win->h}});
 	((void(*)(id, SEL, NSRect, bool, bool))objc_msgSend)
-		((id)win->src.window, sel_registerName("setFrame:display:animate:"), (NSRect){{(double)win->x, (double)win->y}, {(double)win->w, (double)win->h + (double)offset}}, true, true);
+		((id)win->src.window, sel_registerName("setFrame:display:animate:"), STRUCT(NSRect){{(double)win->x, (double)win->y}, {(double)win->w, (double)win->h + (double)offset}}, true, true);
 }
 
 void RGFW_window_focus(RGFW_window* win) {
@@ -13903,11 +13909,11 @@ void RGFW_window_setAspectRatio(RGFW_window* win, i32 w, i32 h) {
 	if (w == 0 && h == 0) {  w = 1; h = 1; };
 
 	((void (*)(id, SEL, NSSize))objc_msgSend)
-		((id)win->src.window, sel_registerName("setContentAspectRatio:"), (NSSize){(CGFloat)w, (CGFloat)h});
+		((id)win->src.window, sel_registerName("setContentAspectRatio:"), STRUCT(NSSize){(CGFloat)w, (CGFloat)h});
 }
 
 void RGFW_window_setMinSize(RGFW_window* win, i32 w, i32 h) {
-	((void (*)(id, SEL, NSSize))objc_msgSend) ((id)win->src.window, sel_registerName("setMinSize:"), (NSSize){(CGFloat)w, (CGFloat)h});
+	((void (*)(id, SEL, NSSize))objc_msgSend) ((id)win->src.window, sel_registerName("setMinSize:"), STRUCT(NSSize){(CGFloat)w, (CGFloat)h});
 }
 
 void RGFW_window_setMaxSize(RGFW_window* win, i32 w, i32 h) {
@@ -13920,7 +13926,7 @@ void RGFW_window_setMaxSize(RGFW_window* win, i32 w, i32 h) {
 	}
 
 	((void (*)(id, SEL, NSSize))objc_msgSend)
-		((id)win->src.window, sel_registerName("setMaxSize:"), (NSSize){(CGFloat)w, (CGFloat)h});
+		((id)win->src.window, sel_registerName("setMaxSize:"), STRUCT(NSSize){(CGFloat)w, (CGFloat)h});
 }
 
 RGFW_bool RGFW_window_setIconEx(RGFW_window* win, u8* data, i32 w, i32 h, RGFW_format format, RGFW_icon type) {
@@ -13939,7 +13945,7 @@ RGFW_bool RGFW_window_setIconEx(RGFW_window* win, u8* data, i32 w, i32 h, RGFW_f
 	id representation = NSBitmapImageRep_initWithBitmapData(NULL, w, h, 8, (NSInteger)4, true, false, "NSCalibratedRGBColorSpace", 1 << 1, w * 4, 32);
 	RGFW_copyImageData(NSBitmapImageRep_bitmapData(representation), w, h, RGFW_formatRGBA8, data, format, NULL);
 
-	id dock_image = ((id(*)(id, SEL, NSSize))objc_msgSend) (NSAlloc((id)objc_getClass("NSImage")), sel_registerName("initWithSize:"), ((NSSize){(CGFloat)w, (CGFloat)h}));
+	id dock_image = ((id(*)(id, SEL, NSSize))objc_msgSend) (NSAlloc((id)objc_getClass("NSImage")), sel_registerName("initWithSize:"), (STRUCT(NSSize){(CGFloat)w, (CGFloat)h}));
 
 	objc_msgSend_void_id(dock_image, sel_registerName("addRepresentation:"), representation);
 
@@ -13974,12 +13980,12 @@ RGFW_mouse* RGFW_loadMouse(u8* data, i32 w, i32 h, RGFW_format format) {
 	id representation = (id)NSBitmapImageRep_initWithBitmapData(NULL, w, h, 8, (NSInteger)4, true, false, "NSCalibratedRGBColorSpace", 1 << 1, w * 4, 32);
 	RGFW_copyImageData(NSBitmapImageRep_bitmapData(representation), w, h, RGFW_formatRGBA8, data, format, NULL);
 
-	id cursor_image = ((id(*)(id, SEL, NSSize))objc_msgSend) (NSAlloc((id)objc_getClass("NSImage")), sel_registerName("initWithSize:"), ((NSSize){(CGFloat)w, (CGFloat)h}));
+	id cursor_image = ((id(*)(id, SEL, NSSize))objc_msgSend) (NSAlloc((id)objc_getClass("NSImage")), sel_registerName("initWithSize:"), (STRUCT(NSSize){(CGFloat)w, (CGFloat)h}));
 
 	objc_msgSend_void_id(cursor_image, sel_registerName("addRepresentation:"), representation);
 
 	id cursor = (id) ((id(*)(id, SEL, id, NSPoint))objc_msgSend)
-		(NSAlloc(objc_getClass("NSCursor")),  sel_registerName("initWithImage:hotSpot:"), cursor_image, (NSPoint){0.0, 0.0});
+		(NSAlloc(objc_getClass("NSCursor")),  sel_registerName("initWithImage:hotSpot:"), cursor_image, STRUCT(NSPoint){0.0, 0.0});
 
 	NSRelease(cursor_image);
 	NSRelease(representation);
@@ -14066,7 +14072,7 @@ void RGFW_window_moveMouse(RGFW_window* win, i32 x, i32 y) {
 
 	win->internal.lastMouseX = x - win->x;
 	win->internal.lastMouseY = y - win->y;
-	CGWarpMouseCursorPosition((CGPoint){(CGFloat)x, (CGFloat)y});
+	CGWarpMouseCursorPosition(STRUCT(CGPoint){(CGFloat)x, (CGFloat)y});
 }
 
 

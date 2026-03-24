@@ -1,6 +1,62 @@
-# Scene Files
-Unfortunately, the JSON parser that we use does not support comments, but it is also case insensitive (by default), so case doesn't matter!
+# Overview
 
+Generally, palomar works by:
+- Loading a scene file
+- Loading all objects in the scene file
+- Allocating required memory
+- Sending data to GPU
+- Enter update loop
+
+Loading can be viewed at [scene.cpp](../src/scene.cpp)
+```cpp
+Result Scene::load(string filename, Graphics &gfx) {
+    // ... read and parse scene file ...
+◊
+    // Load each object
+    for(auto object: scene_objects) {
+        auto loader = create_object_loader(j_object);
+        add_object(loader->load());
+    }
+
+    // Allocate GPU memory
+    gfx.allocate_required_memory();
+
+    // Write out to GPU memory
+    for (auto loader: loaders) {
+        loader->write_buffers(gfx);
+    }
+}
+```
+
+And the main update loop can be viewed at [engine.cpp](../src/engine.cpp)
+```cpp
+Result Engine::run() {
+    // Continue to render frames until window closes
+	while (!RGFW_window_shouldClose(window) && running)
+	{
+		RGFW_event event;
+		while (RGFW_window_checkEvent(window, &event)) {
+            // ... handle window events (e.g. mouse move) ...
+		}
+
+        // Update and render
+		graphics.prepare_frame();
+		scene.update_and_render(graphics, dt);
+		graphics.submit_frame();
+	}
+}
+```
+
+# Object Loading
+
+Object loading is done in [object_loader.cpp](../src/loaders/object_loader.cpp), where it will pick the right loader to use based on object's type.
+
+Some files to note:
+- [mesh_loader.cpp](../src/loaders/mesh_loader.cpp): Loads meshes from `.obj` files, great example of loading from a file.
+- [tokenizer.h](../src/loaders/tokenizer.h): Utility provided to tokenize files. Read [Lexical_analysis](https://en.wikipedia.org/wiki/Lexical_analysis) to learn more.
+- [rig_loader.cpp](../src/loaders/rig_loader.cpp): File you will be modifying!
+
+# Scene Files
 Here is an example scene file with comments for explaination:
 
 ```json
@@ -48,5 +104,3 @@ Here is an example scene file with comments for explaination:
     ]
 }
 ```
-
-See [Scenes/](../scenes/) for more examples.

@@ -11,7 +11,7 @@ Palomar[^1] is a custom GPU renderer provided for the course CSE 169 at UCSD tha
 
 Palomar does not require you to download any external libraries (hopefully). While we do rely on 3rdparty libraries, we try to only use lightweight header-only ones that can be easily included and do not complicate the build. To clone the codebase, do
 ```sh
-git clone https://github.com/mbizzigotti/palomar
+git clone https://github.com/mbizzigotti/palomar_public
 ```
 
 We use [CMake](https://cmake.org) as our build system. To setup the build we can do
@@ -30,7 +30,8 @@ cmake --build build -j
 
 Try running one of the sample scenes provided! On a Unix-like system, you can do
 ```sh
-./build/palomar scenes/multiple.json
+./build/palomar scenes/cube.json
+./build/palomar scenes/sample.json
 ```
 
 # Acknowledgement

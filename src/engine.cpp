@@ -28,6 +28,14 @@ Options::Options(int argc, char *argv[]) {
 	}
 }
 
+void Options::print_help_message() {
+	printf("Usage: palomar [FLAGS] <scene>\n"
+	"\n"
+	"FLAGS:\n"
+	"    -v    Enable Vulkan validation layer\n"
+	"\n");
+}
+
 Result Engine::setup(Options &options) {
 	if (graphics.setup(options.enable_graphics_validation))
 		return ERROR("Failed to setup graphics context!");

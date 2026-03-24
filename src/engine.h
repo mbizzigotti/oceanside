@@ -7,6 +7,7 @@ struct Options {
     const char* scene_filename             { 0 };
 
     Options(int argc, char *argv[]);
+    static void print_help_message();
 };
 
 struct Engine {

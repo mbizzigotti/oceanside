@@ -68,27 +68,6 @@ static constexpr Color RED   = { 255,   0,   0, 255 };
 static constexpr Color GREEN = {   0, 255,   0, 255 };
 static constexpr Color BLUE  = {   0,   0, 255, 255 };
 
-// These literals are soo useful, they should just be built into C++,
-//   but instead we have to wait years for completely useless features
-//   that nobody asks for or even wants.
-constexpr u64 operator""_KiB(u64 kilobytes) {
-    return kilobytes * 1024;
-}
-constexpr u64 operator""_MiB(u64 megabytes) {
-    return megabytes * 1024 * 1024;
-}
-
-constexpr bool is_power_of_two(u64 num) {
-    return ((num) & (num - 1)) == 0; // Think about why this is true!
-}
-
-constexpr u64 align(u64 current, u64 alignment) {
-    // Non-power-of-two alignment doesn't make much sense and probably
-    //   means that something went wrong..
-    assert(is_power_of_two(alignment));
-    return (current + alignment - 1) & ~(alignment - 1);
-}
-
 struct Timer {
     using clock = std::chrono::high_resolution_clock;
     clock::time_point last { clock::now() };

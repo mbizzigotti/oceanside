@@ -1,11 +1,6 @@
 
-# Running
-Try running one of the sample scenes provided!
-```sh
-./palomar scenes/multiple.json
-```
-## Camera
-Press `TAB` to toggle between viewer camera and first person camera
+# Camera Controls
+Press `TAB` to toggle between **Viewer** camera and **First Person** camera.
 ### Viewer
 - Hold and drag with the `LEFT MOUSE` to rotate camera view
 - Use `SCROLL WHEEL` to adjust camera distance

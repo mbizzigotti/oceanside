@@ -73,11 +73,16 @@ Result Graphics::create_instance(bool enable_validation) {
 		.ppEnabledExtensionNames =  extension_names,
 	};
 
+#if defined(__APPLE__)
+	// This is a hack so that Vulkan knows what driver to load (MoltenVK)
+	setenv("VK_ICD_FILENAMES", "./lib/macos/MoltenVK_icd.json", 1);
+#endif
+
 	VkResult result = vkCreateInstance(&instance_info, 0, &instance);
 	if (result == VK_ERROR_LAYER_NOT_PRESENT) {
 		return ERROR("Layer not present!");
 	} else if (result != VK_SUCCESS) {
-		return ERROR("Failed to create Vulkan instance!");
+		return ERROR("Failed to create Vulkan instance! (%i)", (int)(result));
 	}
 	return Success;
 }
