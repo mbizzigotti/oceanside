@@ -116,8 +116,6 @@ template<> void print<struct Token>(const struct Token &token);
  * @brief Loads the contents of an entire file into CPU memory.
  * @param filename Path to the file to load.
  * @return String containing the file contents, or emtpy optional if file could not be loaded.
- * 
- * @note If the file was successfully loaded, then it is the caller's responsiblility to free the string's memory with `free`
 */
 optional<string> read_entire_file(string_view filename);
 
